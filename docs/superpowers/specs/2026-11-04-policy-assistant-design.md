@@ -173,7 +173,7 @@ The prompt tells the model to answer only from the supplied sections, to say so 
 
 ### Ollama provider
 
-- Calls Ollama's `/api/chat` with a JSON schema in `format`, so the output has this shape: `{ answer, citations: [{ chunk_ref, quote }] }`.
+- Calls Ollama's `/api/chat` with a JSON schema in `format`, so the output has this shape: `{ covered, answer, citations: [{ chunk_ref, quote }] }`. When `covered` is false and there are no citations, the API returns the "not found" response.
 - Sections are labelled in the prompt with short references such as `S1`, which map back to chunks.
 - Thinking is off by default for speed. `OLLAMA_THINK=true` turns it on, and `evaluate.py` compares both settings.
 
@@ -188,8 +188,8 @@ The prompt tells the model to answer only from the supplied sections, to say so 
 
 Every citation from either provider goes through `verification.py`:
 
-1. Find the chunk the citation refers to. An unknown reference is removed.
-2. Check that the quote appears in that chunk's text. The comparison is exact, except that runs of whitespace are treated as a single space.
+1. Find the chunk the citation refers to. If the reference cannot be resolved, use the retrieved chunk that contains the quote. If no chunk contains it, the citation is removed. (Changed during the build, because `qwen3:8b` fills the reference field inconsistently.)
+2. Check that the quote appears in that chunk's text. The comparison is exact and matches whole words, except that runs of whitespace are treated as a single space. Quotes under two words are removed.
 3. Remove any citation that fails, and log it.
 
 If no citation survives, the answer is returned with `grounded: false`, and the page shows a warning that the answer could not be matched to policy text.

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.main import build_provider, real_retrieve
+from app.providers.base import ProviderOutputError, ProviderUnavailable
 from app.verification import verify_citations
 
 QUESTIONS = Path(__file__).parent / "tests" / "eval_questions.json"
@@ -21,6 +22,7 @@ class EvalResult:
     retrieved: list[Ref]
     cited: list[Ref]
     grounded: bool
+    declined: bool
     seconds: float
     quotes_total: int
     quotes_verified: int
@@ -45,7 +47,7 @@ def score(results: list[EvalResult]) -> Scorecard:
     return Scorecard(
         retrieval_rate=_rate(sum(r.expected in r.retrieved for r in answerable), len(answerable)),
         citation_rate=_rate(sum(r.expected in r.cited for r in answerable), len(answerable)),
-        refusal_rate=_rate(sum(not r.grounded for r in unanswerable), len(unanswerable)),
+        refusal_rate=_rate(sum(r.declined for r in unanswerable), len(unanswerable)),
         quote_pass_rate=_rate(
             sum(r.quotes_verified for r in results), sum(r.quotes_total for r in results)
         ),
@@ -59,22 +61,26 @@ def run_question(item: dict, settings, provider) -> EvalResult:
     chunks = real_retrieve(item["question"])
     retrieved = [(c.document, c.section_number) for c in chunks]
     best = chunks[0].similarity if chunks else 0.0
-    answer, citations, total = "(below similarity threshold)", [], 0
+    answer, citations, total, declined = "(below similarity threshold)", [], 0, True
     if provider and best >= settings.min_similarity:
-        result = provider.answer(item["question"], chunks)
-        answer, total = result.answer, len(result.citations)
-        citations = verify_citations(result.citations, chunks)
+        try:
+            result = provider.answer(item["question"], chunks)
+            answer, total = result.answer, len(result.citations)
+            declined = not result.covered and not result.citations
+            citations = verify_citations(result.citations, chunks)
+        except (ProviderUnavailable, ProviderOutputError) as error:
+            answer, declined = f"(provider error: {error})", False
     seconds = time.perf_counter() - started
 
     cited = [(c.document, c.section_number) for c in citations]
     outcome = "cited" if expected in cited else ("no citation" if not cited else "other section")
     if not expected:
-        outcome = "declined" if not cited else "NOT DECLINED"
+        outcome = "declined" if declined else "NOT DECLINED"
     found = "yes" if expected in retrieved else "no"
     print(f"best={best:.3f} top5={found:3} {outcome:13} {seconds:5.1f}s  {item['question']}")
     if provider:
         print(f"    {answer[:150]}")
-    return EvalResult(expected, retrieved, cited, bool(cited), seconds, total, len(citations))
+    return EvalResult(expected, retrieved, cited, bool(cited), declined, seconds, total, len(citations))
 
 
 def main() -> None:

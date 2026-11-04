@@ -22,6 +22,7 @@ class RawCitation:
 class ProviderAnswer:
     answer: str
     citations: list[RawCitation]
+    covered: bool = True
 
 
 class ProviderUnavailable(Exception):

@@ -165,3 +165,20 @@ def test_index_served():
     response = client_for().get("/")
     assert response.status_code == 200
     assert "text/html" in response.headers["content-type"]
+
+
+def test_model_decline_is_shown_as_not_found():
+    provider = FakeProvider(ProviderAnswer("The policies do not cover dogs.", [], covered=False))
+    body = ask(client_for(provider=provider)).json()
+    assert body["answer"] == NOT_FOUND_MESSAGE
+    assert body["grounded"] is False
+
+
+def test_answer_without_citations_keeps_its_text_for_the_warning():
+    provider = FakeProvider(ProviderAnswer("You get 99 days.", []))
+    assert ask(client_for(provider=provider)).json()["answer"] == "You get 99 days."
+
+
+def test_decline_with_failed_quotes_keeps_its_text_for_the_warning():
+    result = ProviderAnswer("You get 99 days.", [RawCitation(0, "99 days")], covered=False)
+    assert ask(client_for(provider=FakeProvider(result))).json()["answer"] == "You get 99 days."

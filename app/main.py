@@ -125,7 +125,8 @@ def create_app(
             }
             for c in chunks
         ]
-        if not chunks or chunks[0].similarity < settings.min_similarity:
+
+        def not_found() -> dict:
             return {
                 "answer": NOT_FOUND_MESSAGE,
                 "grounded": False,
@@ -133,7 +134,12 @@ def create_app(
                 "retrieved": retrieved,
                 "model": provider.model_name,
             }
+
+        if not chunks or chunks[0].similarity < settings.min_similarity:
+            return not_found()
         result = provider.answer(request.question, chunks)
+        if not result.covered and not result.citations:
+            return not_found()
         citations = verify_citations(result.citations, chunks)
         return {
             "answer": result.answer,

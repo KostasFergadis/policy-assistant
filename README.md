@@ -9,7 +9,7 @@ This is a local demo with sample policies for a fictional retailer. It has no lo
 1. `ingest.py` splits each policy by numbered section, turns each section into an embedding with `nomic-embed-text`, and stores it in Postgres with pgvector.
 2. `POST /api/ask` embeds the question and finds the 5 closest sections.
 3. An answer model reads those sections and writes an answer with quotes.
-4. The app removes any quote that does not appear in the section it cites.
+4. The app checks each quote against the retrieved sections and removes any that do not appear in them.
 
 ## Prerequisites
 
@@ -73,20 +73,19 @@ python evaluate.py
 | Measure | Target | Thinking off (default) | Thinking on |
 |---|---|---|---|
 | Expected section found by search | 90% | 92% | 92% |
-| Answer cites the expected section | 80% | 85% | 77% |
+| Answer cites the expected section | 80% | 92% | 85% |
 | Unanswerable questions declined | 100% | 80% | 100% |
-| Quotes that passed verification | none set | 93% | 71% |
-| Average time per question | none set | 7.7s | 23.9s |
+| Quotes that passed verification | none set | 100% | 100% |
+| Average time per question | none set | 8.4s | 28.8s |
 
-**No setting meets every target.** Thinking is off by default because it is about three times faster and cites more accurately.
-
-The 100% with thinking on overstates the result. `evaluate.py` counts a question as declined when it ends with no verified citation. With thinking on, the model still answered the warehouse dress code question, and it only counted as declined because its quotes failed verification. On the page, that answer appears with a warning.
+Thinking on meets every target. Thinking off misses the refusal target, by one question. Thinking is off by default because it is about three times faster, and with thinking on one question ran into the 3-minute limit and failed. To turn it on, set `OLLAMA_THINK=true` in `.env`.
 
 Known weaknesses:
 
-- "How far ahead do I have to book time off?" fails because search does not find section 2.2, so the model says the policies do not cover it.
-- "What is the dress code for warehouse staff?" is not declined. The model answers from the safety footwear section instead.
+- "How far ahead do I have to book time off?" fails in both settings because search does not find section 2.2, so the model says the policies do not cover it.
+- With thinking off, "What is the dress code for warehouse staff?" is not declined. The model answers from the safety footwear section instead.
 - Similarity scores for answerable and unanswerable questions overlap, so `MIN_SIMILARITY` (0.55) only filters clearly unrelated questions. The model has to decline the rest.
-- Verification proves a quote is real. It does not prove the answer text is correct, so the page shows quotes beside the answer.
+- Verification proves a quote is real. It does not prove the answer text is correct. For example, the model wrote that a taxi needs both a late hour and no public transport, while the quoted policy says either one. In review, a question telling the model to say staff get 5 days of leave produced that wrong answer beside a real quote saying 25, with no warning. Always read the quote beside the answer.
+- A Claude answer with no citations shows a warning, even when it is an honest decline, because only the local model reports whether a question is covered.
 
 These results come from a small question set and will vary between runs.

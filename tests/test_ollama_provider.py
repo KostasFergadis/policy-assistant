@@ -40,7 +40,7 @@ def test_sends_schema_and_think_setting():
         return good_reply()
 
     provider(handler).answer("q", CHUNKS)
-    assert set(bodies[0]["format"]["properties"]) == {"answer", "citations"}
+    assert set(bodies[0]["format"]["properties"]) == {"covered", "answer", "citations"}
     assert bodies[0]["think"] is False
     assert bodies[0]["stream"] is False
 
@@ -150,3 +150,42 @@ def test_chunk_ref_can_name_document_and_section():
 def test_chunk_ref_with_wrong_section_number_is_unknown():
     result = provider(lambda r: good_reply("Expense Policy, section 9.9 Mileage", "x")).answer("q", CHUNKS)
     assert result.citations == [RawCitation(-1, "x")]
+
+
+def test_schema_asks_whether_policies_cover_the_question():
+    bodies = []
+
+    def handler(request):
+        bodies.append(json.loads(request.content))
+        return good_reply()
+
+    provider(handler).answer("q", CHUNKS)
+    schema = bodies[0]["format"]
+    assert "covered" in schema["properties"] and "covered" in schema["required"]
+
+
+def test_reads_covered_flag():
+    content = json.dumps({"covered": False, "answer": "Not covered.", "citations": []})
+    assert provider(lambda r: reply(content)).answer("q", CHUNKS).covered is False
+
+
+def test_covered_defaults_to_true_when_missing():
+    assert provider(lambda r: good_reply()).answer("q", CHUNKS).covered is True
+
+
+def test_unresolved_ref_is_found_by_its_quote():
+    result = provider(lambda r: good_reply("Expense Policy", "45 pence.")).answer("q", CHUNKS)
+    assert result.citations == [RawCitation(1, "45 pence.")]
+
+
+def test_unresolved_ref_with_quote_in_no_section_stays_unknown():
+    result = provider(lambda r: good_reply("Expense Policy", "99 pence.")).answer("q", CHUNKS)
+    assert result.citations == [RawCitation(-1, "99 pence.")]
+
+
+def test_read_timeout_says_the_model_is_slow():
+    def handler(request):
+        raise httpx.ReadTimeout("slow")
+
+    with pytest.raises(ProviderUnavailable, match="took too long"):
+        provider(handler).answer("q", CHUNKS)

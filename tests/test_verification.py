@@ -52,3 +52,22 @@ def test_same_quote_in_two_parts_of_section_returned_once():
     other = make_chunk(chunk_id=2, content="Reminder: 20 days.")
     citations = [RawCitation(0, "20 days"), RawCitation(1, "20 days")]
     assert len(verify_citations(citations, [CHUNK, other])) == 1
+
+
+@pytest.mark.parametrize("quote", ["0 days", "days of annu", "20 day"])
+def test_word_fragment_removed(quote):
+    assert verify_citations([RawCitation(0, quote)], [CHUNK]) == []
+
+
+@pytest.mark.parametrize("quote", [".", "...", "-"])
+def test_punctuation_only_quote_removed(quote):
+    chunk = make_chunk(content="Staff get 20 days... of leave - each year.")
+    assert verify_citations([RawCitation(0, quote)], [chunk]) == []
+
+
+def test_single_word_quote_removed():
+    assert verify_citations([RawCitation(0, "Staff")], [CHUNK]) == []
+
+
+def test_quote_ending_in_punctuation_passes():
+    assert len(verify_citations([RawCitation(0, "annual leave each year.")], [CHUNK])) == 1

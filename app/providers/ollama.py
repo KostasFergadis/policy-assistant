@@ -12,12 +12,14 @@ from app.providers.base import (
     RetrievedChunk,
 )
 from app.providers.prompts import OLLAMA_FORMAT_RULES, SYSTEM_PROMPT
+from app.verification import quote_in_text
 
 logger = logging.getLogger(__name__)
 
 ANSWER_SCHEMA = {
     "type": "object",
     "properties": {
+        "covered": {"type": "boolean"},
         "answer": {"type": "string"},
         "citations": {
             "type": "array",
@@ -28,7 +30,7 @@ ANSWER_SCHEMA = {
             },
         },
     },
-    "required": ["answer", "citations"],
+    "required": ["covered", "answer", "citations"],
 }
 
 
@@ -43,8 +45,12 @@ def _user_message(question: str, chunks: list[RetrievedChunk]) -> str:
     )
 
 
-def _chunk_index(chunk_ref: str, chunks: list[RetrievedChunk]) -> int:
-    """Resolve a label such as S2, or a reference naming the document and section."""
+def _chunk_index(chunk_ref: str, quote: str, chunks: list[RetrievedChunk]) -> int:
+    """Find the cited chunk from its label or section, or else from the quote itself.
+
+    Small models fill the reference field inconsistently, so a reference that cannot
+    be resolved falls back to the retrieved section that contains the quote.
+    """
     label = chunk_ref.strip().strip("[]")
     if label.startswith("S") and label[1:].isdigit():
         index = int(label[1:]) - 1
@@ -52,6 +58,9 @@ def _chunk_index(chunk_ref: str, chunks: list[RetrievedChunk]) -> int:
     numbers = set(re.findall(r"\d+(?:\.\d+)*", label))
     for index, chunk in enumerate(chunks):
         if chunk.document.lower() in label.lower() and chunk.section_number in numbers:
+            return index
+    for index, chunk in enumerate(chunks):
+        if quote_in_text(quote, chunk.content):
             return index
     return -1
 
@@ -61,10 +70,10 @@ def _parse(content: str, chunks: list[RetrievedChunk]) -> ProviderAnswer:
     if not isinstance(data.get("answer"), str) or not isinstance(data.get("citations"), list):
         raise ValueError("Unexpected answer shape")
     citations = [
-        RawCitation(_chunk_index(item["chunk_ref"], chunks), item["quote"])
+        RawCitation(_chunk_index(item["chunk_ref"], item["quote"], chunks), item["quote"])
         for item in data["citations"]
     ]
-    return ProviderAnswer(data["answer"], citations)
+    return ProviderAnswer(data["answer"], citations, data.get("covered") is not False)
 
 
 class OllamaProvider:
@@ -95,6 +104,8 @@ class OllamaProvider:
                     ],
                 },
             )
+        except httpx.TimeoutException as error:
+            raise ProviderUnavailable("The model took too long to answer. Try again.") from error
         except httpx.HTTPError as error:
             raise self._unavailable() from error
         if response.status_code == 404:

@@ -8,6 +8,9 @@ Rules:
 
 OLLAMA_FORMAT_RULES = """
 
+Coverage:
+- Set covered to true only if the sections directly answer the question. Otherwise set it to false.
+
 Citations:
 - Each citation names one section by its label, such as S1, and gives a quote.
 - Copy each quote word for word from that section, including punctuation. Do not paraphrase or shorten words.
