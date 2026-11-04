@@ -1,0 +1,20 @@
+[
+  {"question": "How many vacation days do I get?", "document": "Leave Policy", "section_number": "2.1"},
+  {"question": "How far ahead do I have to book time off?", "document": "Leave Policy", "section_number": "2.2"},
+  {"question": "Can I take a holiday in December if I work in a store?", "document": "Leave Policy", "section_number": "2.3"},
+  {"question": "I woke up feeling ill. Who do I tell, and when?", "document": "Leave Policy", "section_number": "3.1"},
+  {"question": "What's the heaviest box I can pick up by myself?", "document": "Workplace Safety", "section_number": "4.1"},
+  {"question": "I cut my hand badly and had to go to hospital. Who needs to know?", "document": "Workplace Safety", "section_number": "2.1"},
+  {"question": "My colleague is late and I'm the keyholder. Can I open up on my own?", "document": "Store Opening Checklist", "section_number": "1.1"},
+  {"question": "The alarm won't arm at night. Who do I phone?", "document": "Store Closing Checklist", "section_number": "4.1"},
+  {"question": "A supplier offered me a bottle of wine worth 40 pounds. Can I keep it?", "document": "Code of Conduct", "section_number": "3.1"},
+  {"question": "How much can I get back for driving my own car for work?", "document": "Expense Policy", "section_number": "3.2"},
+  {"question": "I lost the receipt for a 12 pound lunch. Can I still get paid back?", "document": "Expense Policy", "section_number": "2.2"},
+  {"question": "A customer wants 80 pounds back in cash. Does anyone need to approve it?", "document": "Cash Handling", "section_number": "3.1"},
+  {"question": "What do I do if someone robs the store?", "document": "Cash Handling", "section_number": "5.1"},
+  {"question": "Do I get paid time off for jury duty?", "document": null, "section_number": null},
+  {"question": "What is the dress code for warehouse staff?", "document": null, "section_number": null},
+  {"question": "Can I bring my dog to work?", "document": null, "section_number": null},
+  {"question": "When is the next company pay rise?", "document": null, "section_number": null},
+  {"question": "What is the capital of France?", "document": null, "section_number": null}
+]

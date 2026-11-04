@@ -27,5 +27,5 @@ def get_settings() -> Settings:
         ollama_model=env("OLLAMA_MODEL", "qwen3:8b"),
         ollama_think=env("OLLAMA_THINK", "false").lower() == "true",
         claude_model=env("CLAUDE_MODEL", "claude-opus-5-5"),
-        min_similarity=float(env("MIN_SIMILARITY", "0.5")),
+        min_similarity=float(env("MIN_SIMILARITY", "0.55")),
     )

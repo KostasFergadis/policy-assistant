@@ -128,3 +128,25 @@ def test_check_reports_missing_model():
 def test_check_passes_when_model_present():
     tags = {"models": [{"name": "qwen3:8b"}]}
     provider(lambda r: httpx.Response(200, json=tags)).check()
+
+
+def test_reminder_about_labels_comes_after_the_question():
+    bodies = []
+
+    def handler(request):
+        bodies.append(json.loads(request.content))
+        return good_reply()
+
+    provider(handler).answer("how much?", CHUNKS)
+    user = bodies[0]["messages"][-1]["content"]
+    assert user.index("how much?") < user.index("Do not mention labels")
+
+
+def test_chunk_ref_can_name_document_and_section():
+    result = provider(lambda r: good_reply("Expense Policy, section 3.2 Mileage", "x")).answer("q", CHUNKS)
+    assert result.citations == [RawCitation(1, "x")]
+
+
+def test_chunk_ref_with_wrong_section_number_is_unknown():
+    result = provider(lambda r: good_reply("Expense Policy, section 9.9 Mileage", "x")).answer("q", CHUNKS)
+    assert result.citations == [RawCitation(-1, "x")]

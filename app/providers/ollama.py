@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 import httpx
 
@@ -36,24 +37,31 @@ def _user_message(question: str, chunks: list[RetrievedChunk]) -> str:
         f"[S{i}] {c.document}, section {c.section_number} {c.section_title}\n{c.content}"
         for i, c in enumerate(chunks, start=1)
     )
-    return f"Policy sections:\n\n{sections}\n\nQuestion: {question}"
+    return (
+        f"Policy sections:\n\n{sections}\n\nQuestion: {question}\n\n"
+        "Do not mention labels such as S1 in the answer text. Name the policy instead."
+    )
 
 
-def _chunk_index(chunk_ref: str, count: int) -> int:
+def _chunk_index(chunk_ref: str, chunks: list[RetrievedChunk]) -> int:
+    """Resolve a label such as S2, or a reference naming the document and section."""
     label = chunk_ref.strip().strip("[]")
     if label.startswith("S") and label[1:].isdigit():
         index = int(label[1:]) - 1
-        if 0 <= index < count:
+        return index if 0 <= index < len(chunks) else -1
+    numbers = set(re.findall(r"\d+(?:\.\d+)*", label))
+    for index, chunk in enumerate(chunks):
+        if chunk.document.lower() in label.lower() and chunk.section_number in numbers:
             return index
     return -1
 
 
-def _parse(content: str, count: int) -> ProviderAnswer:
+def _parse(content: str, chunks: list[RetrievedChunk]) -> ProviderAnswer:
     data = json.loads(content)
     if not isinstance(data.get("answer"), str) or not isinstance(data.get("citations"), list):
         raise ValueError("Unexpected answer shape")
     citations = [
-        RawCitation(_chunk_index(item["chunk_ref"], count), item["quote"])
+        RawCitation(_chunk_index(item["chunk_ref"], chunks), item["quote"])
         for item in data["citations"]
     ]
     return ProviderAnswer(data["answer"], citations)
@@ -99,7 +107,7 @@ class OllamaProvider:
         for attempt in (1, 2):
             content = self._chat(question, chunks)
             try:
-                return _parse(content, len(chunks))
+                return _parse(content, chunks)
             except (ValueError, KeyError, TypeError, AttributeError):
                 logger.warning("Unusable model output on attempt %d", attempt)
         raise ProviderOutputError("The model returned an answer that could not be read.")
