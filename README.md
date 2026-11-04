@@ -78,7 +78,9 @@ python evaluate.py
 | Quotes that passed verification | none set | 93% | 71% |
 | Average time per question | none set | 7.7s | 23.9s |
 
-**No setting meets every target.** Thinking is off by default because it misses one target rather than one with a much slower response.
+**No setting meets every target.** Thinking is off by default because it is about three times faster and cites more accurately.
+
+The 100% with thinking on overstates the result. `evaluate.py` counts a question as declined when it ends with no verified citation. With thinking on, the model still answered the warehouse dress code question, and it only counted as declined because its quotes failed verification. On the page, that answer appears with a warning.
 
 Known weaknesses:
 
