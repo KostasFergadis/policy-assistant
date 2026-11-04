@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staff Handbook Search</title>
+<style>
+  :root {
+    --ink: #14283a;
+    --muted: #4e6272;
+    --paper: #edf2f3;
+    --sheet: #fbfdfd;
+    --harbor: #0e5f6e;
+    --line: #c5d2d6;
+    --marker: #ffe45c;
+    --alert-bg: #fdeee2;
+    --alert-ink: #7a3208;
+    --sans: "Avenir Next", Avenir, "Segoe UI", Helvetica, Arial, sans-serif;
+    --serif: "Iowan Old Style", Charter, Georgia, serif;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font: 17px/1.5 var(--sans);
+  }
+
+  main {
+    width: min(100%, 46rem);
+    margin: 0 auto;
+    padding: 3.5rem 1rem 5rem;
+  }
+
+  h1 {
+    margin: 0 0 1.5rem;
+    font: 600 clamp(2.1rem, 6vw, 3rem)/1.1 var(--serif);
+    letter-spacing: -0.01em;
+  }
+
+  form { display: flex; gap: 0.5rem; }
+
+  input {
+    flex: 1;
+    min-width: 0;
+    padding: 0.8rem 0.9rem;
+    border: 2px solid var(--ink);
+    border-radius: 3px;
+    background: var(--sheet);
+    color: var(--ink);
+    font: inherit;
+    font-size: 1.1rem;
+  }
+
+  button { font: inherit; cursor: pointer; }
+
+  .ask {
+    padding: 0 1.5rem;
+    border: 2px solid var(--ink);
+    border-radius: 3px;
+    background: var(--ink);
+    color: var(--sheet);
+    font-weight: 600;
+  }
+
+  .ask:hover:not(:disabled) { background: var(--harbor); border-color: var(--harbor); }
+  .ask:disabled { opacity: 0.55; cursor: progress; }
+
+  :focus-visible { outline: 3px solid var(--harbor); outline-offset: 2px; }
+
+  .examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.25rem;
+    margin: 0.9rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .examples button {
+    padding: 0.2rem 0;
+    border: 0;
+    background: none;
+    color: var(--harbor);
+    font-size: 0.95rem;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .examples button:hover { color: var(--ink); }
+
+  .notice {
+    margin: 1.5rem 0 0;
+    padding: 0.8rem 1rem;
+    border-radius: 3px;
+    background: var(--alert-bg);
+    color: var(--alert-ink);
+    overflow-wrap: anywhere;
+  }
+
+  .notice code { font-size: 0.9em; font-weight: 600; }
+
+  #result { margin-top: 2.75rem; }
+
+  .status { color: var(--muted); }
+
+  .asked {
+    margin: 0 0 0.35rem;
+    color: var(--muted);
+    font-size: 0.95rem;
+    overflow-wrap: anywhere;
+  }
+
+  .answer {
+    margin: 0;
+    font: 400 1.4rem/1.45 var(--serif);
+    overflow-wrap: anywhere;
+  }
+
+  .sources { margin-top: 2.25rem; }
+
+  .excerpt {
+    display: grid;
+    grid-template-columns: 4.5rem 1fr;
+    gap: 1rem;
+    margin: 0 0 1rem;
+    padding: 1.1rem 1.25rem 1.2rem 0;
+    background: var(--sheet);
+    border-left: 5px solid var(--harbor);
+  }
+
+  .section-number {
+    margin: 0;
+    color: var(--harbor);
+    font: 600 1.7rem/1.1 var(--serif);
+    text-align: right;
+  }
+
+  .excerpt h2 {
+    margin: 0 0 0.45rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .excerpt blockquote {
+    margin: 0;
+    font: 400 1.05rem/1.65 var(--serif);
+    overflow-wrap: anywhere;
+  }
+
+  mark {
+    padding: 0.1em 0.15em;
+    background: var(--marker);
+    color: var(--ink);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
+  details { margin-top: 1.75rem; color: var(--muted); font-size: 0.95rem; }
+  summary { cursor: pointer; }
+
+  details ol { margin: 0.75rem 0 0; padding: 0; list-style: none; }
+
+  details li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .match { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .model { margin-top: 1rem; color: var(--muted); font-size: 0.85rem; }
+
+  @media (max-width: 34rem) {
+    main { padding-top: 2rem; }
+    form { flex-direction: column; }
+    .ask { padding: 0.75rem; }
+    .excerpt { grid-template-columns: 1fr; gap: 0.3rem; padding: 0.9rem 1rem 1rem; }
+    .section-number { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Ask the staff handbook</h1>
+
+  <form id="ask-form">
+    <input id="question" type="text" maxlength="500" required autocomplete="off"
+           aria-label="Your question" placeholder="What do you need to know?">
+    <button class="ask" id="ask-button" type="submit">Ask</button>
+  </form>
+
+  <ul class="examples" id="examples" aria-label="Example questions"></ul>
+
+  <div id="setup" class="notice" role="alert" hidden></div>
+  <section id="result" aria-live="polite"></section>
+</main>
+
+<script>
+  const NOT_FOUND = "I couldn't find this in the policies.";
+  const EXAMPLES = [
+    "How many vacation days do I get?",
+    "Can I claim a taxi home after a late shift?",
+    "What should I do if I find a spill?",
+    "What happens if a customer pays with a fake note?",
+  ];
+
+  const form = document.getElementById("ask-form");
+  const input = document.getElementById("question");
+  const button = document.getElementById("ask-button");
+  const result = document.getElementById("result");
+  const setup = document.getElementById("setup");
+
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function groupBySection(citations) {
+    const groups = new Map();
+    for (const citation of citations) {
+      const key = `${citation.document}\n${citation.section_number}`;
+      if (!groups.has(key)) groups.set(key, { ...citation, quotes: [] });
+      groups.get(key).quotes.push(citation.quoted_text);
+    }
+    return [...groups.values()];
+  }
+
+  function excerpt(section) {
+    const card = el("article", "excerpt");
+    card.append(el("p", "section-number", section.section_number));
+    const body = el("div");
+    body.append(el("h2", "", `${section.document}: ${section.section_title}`));
+    const quote = el("blockquote");
+    section.quotes.forEach((text, index) => {
+      if (index) quote.append(" ");
+      quote.append(el("mark", "", text));
+    });
+    body.append(quote);
+    card.append(body);
+    return card;
+  }
+
+  function searched(retrieved) {
+    const details = el("details");
+    details.append(el("summary", "", `Sections searched (${retrieved.length})`));
+    const list = el("ol");
+    for (const item of retrieved) {
+      const row = el("li");
+      row.append(el("span", "", `${item.document} ${item.section_number}, ${item.section_title}`));
+      row.append(el("span", "match", `${Math.round(item.similarity * 100)}% match`));
+      list.append(row);
+    }
+    details.append(list);
+    return details;
+  }
+
+  function showAnswer(question, data) {
+    result.replaceChildren();
+    result.append(el("p", "asked", question));
+    result.append(el("p", "answer", data.answer));
+
+    if (data.answer === NOT_FOUND) {
+      result.append(el("p", "status", "Try different words, or ask your manager or HR."));
+    } else if (!data.grounded) {
+      result.append(el("p", "notice",
+        "This answer has no matching policy quote. Check it with your manager before relying on it."));
+    }
+
+    if (data.citations.length) {
+      const sources = el("div", "sources");
+      sources.append(...groupBySection(data.citations).map(excerpt));
+      result.append(sources);
+    }
+    if (data.retrieved.length) result.append(searched(data.retrieved));
+    result.append(el("p", "model", `Answered by ${data.model}`));
+  }
+
+  function showError(message) {
+    result.replaceChildren(el("p", "notice", message));
+  }
+
+  async function ask(question) {
+    button.disabled = true;
+    button.textContent = "Reading";
+    result.replaceChildren(el("p", "status",
+      "Reading the policies. The first answer can take up to a minute."));
+    try {
+      const response = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        showAnswer(question, data);
+      } else if (response.status === 422) {
+        showError("Enter a question of 500 characters or fewer.");
+      } else {
+        showError(data.detail || "The question could not be answered. Try again.");
+      }
+    } catch {
+      showError("The server did not respond. Check that it is running, then try again.");
+    } finally {
+      button.disabled = false;
+      button.textContent = "Ask";
+    }
+  }
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const question = input.value.trim();
+    if (question && !button.disabled) ask(question);
+  });
+
+  for (const text of EXAMPLES) {
+    const item = el("li");
+    const example = el("button", "", text);
+    example.type = "button";
+    example.addEventListener("click", () => {
+      input.value = text;
+      form.requestSubmit();
+    });
+    item.append(example);
+    document.getElementById("examples").append(item);
+  }
+
+  async function checkSetup() {
+    try {
+      const health = await (await fetch("/api/health")).json();
+      const problems = ["database", "ollama", "provider"]
+        .map((name) => health[name])
+        .filter((status) => !status.ok)
+        .map((status) => status.detail);
+      setup.textContent = problems.join(" ");
+      setup.hidden = problems.length === 0;
+    } catch {
+      setup.textContent = "The server did not respond. Check that it is running.";
+      setup.hidden = false;
+    }
+  }
+
+  checkSetup();
+</script>
+</body>
+</html>
