@@ -4,6 +4,14 @@ Ask a question about company policy and get an answer with quotes from the exact
 
 This is a local demo with sample policies for a fictional retailer. It has no login, so it only listens on your own machine.
 
+![An answer about annual leave, with the quoted policy text highlighted under section 2.1](docs/demo/screenshot.png)
+
+## Demo
+
+The clip answers a question it can find, then declines one the policies do not cover. It plays at real speed on a laptop with `qwen3:8b` and is not sped up. There is also an [MP4 version](docs/demo/demo.mp4).
+
+![Recording of the app answering a vacation question with a quote, then declining a question about dogs](docs/demo/demo.gif)
+
 ## How it works
 
 1. `ingest.py` splits each policy by numbered section, turns each section into an embedding with `nomic-embed-text`, and stores it in Postgres with pgvector.
@@ -89,3 +97,7 @@ Known weaknesses:
 - A Claude answer with no citations shows a warning, even when it is an honest decline, because only the local model reports whether a question is covered.
 
 These results come from a small question set and will vary between runs.
+
+## License
+
+[MIT](LICENSE)
